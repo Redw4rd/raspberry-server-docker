@@ -14,6 +14,7 @@ services:
         build: ./php/
         working_dir: /code
         volumes:
+            - ./config/php:/usr/local/etc/php/conf.d
             - ./www:/code
         depends_on:
             - mysql
@@ -26,7 +27,7 @@ services:
             - 443:443
         volumes:
             - ./data/certificates:/etc/nginx/certificates:ro
-            - ./data/nginx/conf:/etc/nginx/conf.d:ro
+            - ./config/nginx:/etc/nginx/conf.d:ro
             - ./www:/code
         restart: unless-stopped
         networks:
