@@ -1,0 +1,64 @@
+version: 3
+services:
+    cloudflare-ddns:
+        image: oznu/cloudflare-ddns:latest
+        container_name: "Cloudflare DDNS"
+        restart: always
+        environment:
+            - API_KEY=${CLOUDFLARE_API}
+            - ZONE=${CLOUDFLARE_ZONE}
+            - PROXIED=${CLOUDFLARE_PROXIED}
+    # PHP with usable version
+    php:
+        container_name: php-7.4-fpm
+        build: ./php/
+        working_dir: /code
+        volumes:
+            - ./www:/code
+        depends_on:
+            - mysql
+    # Nginx
+    nginx:
+        container_name: nginx
+        image: nginx
+        ports:
+            - 80:80
+            - 443:443
+        volumes:
+            - ./data/certificates:/etc/nginx/certificates:ro
+            - ./data/nginx/conf:/etc/nginx/conf.d:ro
+            - ./www:/code
+        restart: unless-stopped
+        networks:
+            public:
+        depends_on: 
+            - php
+    # MariaDB database engine
+    mysql:
+        image: 'jc21/mariadb-aria:latest'
+        restart: unless-stopped
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_USER}
+        volumes:
+            - ./data/mysql:/var/lib/mysql
+        networks:
+            public:
+    # Database GUI
+    phpmyadmin:
+        container_name: phpmyadmin
+        image: phpmyadmin/phpmyadmin:5
+        environment:
+            PMA_HOST: mysql
+        ports:
+            - '8000:80'
+        volumes:
+            - ./data/phpmyadmin:/usr/src/phpmyadmin
+        depends_on:
+            - php
+
+networks:
+    public:
+        external: true
